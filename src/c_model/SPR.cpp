@@ -97,17 +97,22 @@ A dot(A * a, A * b, int size) {
 	return tmp;
 }
 
+
+ 
+
+
 real predict(int u, int i) {
 	return dot(pu + u*dim, qi + i*dim, dim);
 }
 
 real SPR_upgrade(int u, int i, int j, int k) {
-
+	// 1. 输出化指针
 	p = pu + u*dim;
 	q = qi + i*dim;
 	qj = qi + j*dim;
 	qk = qi + k*dim;
 
+	// 2. 计算中间结果
 	real yi = predict(u, i);
 	real yj = predict(u, j);
 	real yk = predict(u, k);
@@ -116,7 +121,7 @@ real SPR_upgrade(int u, int i, int j, int k) {
 	real z1 = 1 - 1 / (1 + exp(-x1));
 	real z2 = 1 - 1 / (1 + exp(-x2));
 
-
+	// 3. 参数更新
 	for (int i = 0; i < dim; i++) {
 		du[i] = lr * (-a * z1 * (q[i] - qj[i]) + d * z2 * (q[i] - qk[i]) -
 					  rg * p[i]);
@@ -142,13 +147,16 @@ void train() {
 	FILE * fp=fopen(train_path,"r");
 	if (fp == nullptr) { printf("open file  %s error\n",train_path); exit(0); }
 
+	// 循环
 	for (int local_iter = 0; local_iter < iter; local_iter++) {
 		printf("iter is %d|%d\n", local_iter + 1,iter);
 		fseek(fp, 0, SEEK_SET);
 		e_count = 0;
 		e_count2 = 0;
+		// 单次循环
 		while (!feof(fp))
 		{
+			// 1. 获取输入
 			fgets(buf, 1024, fp);
 			sscanf(buf, "%d,%d,%d,%d", &u, &i, &j, &k);
 			real yi = predict(u, i);
@@ -156,6 +164,7 @@ void train() {
 			real x = yi - yk;
 			if (x < -0.5) { e_count++; }
 			if (x > 0.5) { e_count2++; }
+			// 2. 更新参数
 			SPR_upgrade(u, i, j, k);
 		}		
 	}
@@ -169,8 +178,10 @@ void cheak_args(void) {
 
 int main(int argc, char ** argv) {
 	
+	// 1. 获取模型运行时需要的参数
 	get_args(argc, argv);
 	
+	// 2. 模型参数的初始化
 	pu = INIT(n_users *dim, sizeof(real));
 	qi = INIT(n_items *dim, sizeof(real));
 	
@@ -186,9 +197,10 @@ int main(int argc, char ** argv) {
 	dj = INIT(dim, sizeof(real));
 	dk = INIT(dim, sizeof(real));
 
+	// 3. 模型训练
 	train();
 
-    // 存储训练结果
+    // 4. 存储训练结果
 	FILE *fp=fopen(u_path,"wb");
 
 	if (fp != nullptr) {
@@ -210,6 +222,8 @@ int main(int argc, char ** argv) {
 		printf("open i_path error!\n");
 
 	}
+
+	// 5. 释放资源
 	fclose(fp);
 	free(pu);
 	free(qi);
