@@ -29,6 +29,7 @@ real lr = 0.007, rg = 0.05;
 int iter = 20;
 real a = 0.1;
 real d = 1 - a;
+
 real * pu, *qi, *du, *di, *dj, *dk;
 real *p, *q, *qj, *qk;
 
@@ -106,6 +107,7 @@ real predict(int u, int i) {
 }
 
 real SPR_upgrade(int u, int i, int j, int k) {
+	
 	// 1. 输出化指针
 	p = pu + u*dim;
 	q = qi + i*dim;
@@ -113,6 +115,8 @@ real SPR_upgrade(int u, int i, int j, int k) {
 	qk = qi + k*dim;
 
 	// 2. 计算中间结果
+	// 代码中的j对应论文中的q，代码中的k对应论文中的j
+	// 所以z1和z2其实是反着的
 	real yi = predict(u, i);
 	real yj = predict(u, j);
 	real yk = predict(u, k);
@@ -122,6 +126,7 @@ real SPR_upgrade(int u, int i, int j, int k) {
 	real z2 = 1 - 1 / (1 + exp(-x2));
 
 	// 3. 参数更新
+	// 3.1 计算梯度
 	for (int i = 0; i < dim; i++) {
 		du[i] = lr * (-a * z1 * (q[i] - qj[i]) + d * z2 * (q[i] - qk[i]) -
 					  rg * p[i]);
@@ -129,6 +134,7 @@ real SPR_upgrade(int u, int i, int j, int k) {
 		dj[i] = lr * (a * z1 * p[i] - rg * qj[i]);
 		dk[i] = lr * (-d * z2 * p[i] - rg * qk[i]);
 	}
+	// 3.2 更新
 	for (int i = 0; i < dim; i++) {
 		p[i] += du[i];
 		q[i] += di[i];
@@ -137,6 +143,10 @@ real SPR_upgrade(int u, int i, int j, int k) {
 	}
 	return 0;
 }
+
+
+
+
 
 void train() {
 
@@ -158,6 +168,7 @@ void train() {
 		{
 			// 1. 获取输入
 			fgets(buf, 1024, fp);
+			// u,i,pos,neg
 			sscanf(buf, "%d,%d,%d,%d", &u, &i, &j, &k);
 			real yi = predict(u, i);
 			real yk = predict(u, k);
