@@ -132,7 +132,7 @@ def process_data_by_split(path,sep,n_items,train_path,test_path,test_size=0.5,n_
     df2=pd.DataFrame()
 
     iids=[i for i in range(n_items)]
-    for uid,group in df.groupby(["userId"]):
+    for uid,group in tqdm(df.groupby(["userId"]),ncols=100):
         
         h=list(group.movieId.unique())
         l=len(h)
